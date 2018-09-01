@@ -1,0 +1,9 @@
+appVersion: "4.0"
+description: Fork form https://github.com/mongodb/mongo, modify for mongodb test suit
+maintainers:
+- email: chris_waity@126.com
+  name: Chris
+name: mongodb-sharding
+sources:
+- https://github.com/archaememo/mongodb_testsuit
+version: 1.0.1

@@ -1,0 +1,21 @@
+# A headless service to create DNS records
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  labels:
+    app: {{ .Values.mongod.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ .Values.replicas.name }}-{{ .Release.Name }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: peer
+      port: {{ .Values.mongod.port }}
+  selector:
+    app: {{ .Values.mongod.name }}
+    release: {{ .Release.Name }}

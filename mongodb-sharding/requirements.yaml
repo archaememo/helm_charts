@@ -1,0 +1,13 @@
+dependencies:
+  - name: mongodb-replica
+    repository: http://127.0.0.1:8879
+    version: 1.0.1
+    alias: replicas0
+  - name: mongodb-replica
+    repository: http://127.0.0.1:8879
+    version: 1.0.1
+    alias: replicas1
+  - name: mongodb-replica
+    repository: http://127.0.0.1:8879
+    version: 1.0.1
+    alias: config

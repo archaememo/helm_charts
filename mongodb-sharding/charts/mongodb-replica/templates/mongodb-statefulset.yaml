@@ -1,0 +1,174 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: {{ .Values.mongod.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ .Values.mongod.name }}-{{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.mongod.name }}
+      release: {{ .Release.Name }}
+  serviceName: {{ .Values.replicas.name }}-{{ .Release.Name }}
+  replicas: {{ .Values.replicas.num }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.mongod.name }}
+        release: {{ .Release.Name }}
+    spec:
+      initContainers:
+        - name: copy-config
+          image: busybox
+          command:
+            - "sh"
+          args:
+            - "-c"
+            - |
+              set -e
+              set -x
+
+              cp /configdb-readonly/mongod.conf /data/configdb/mongod.conf
+
+          volumeMounts:
+            - name: workdir
+              mountPath: /work-dir
+            - name: config
+              mountPath: /configdb-readonly
+            - name: configdir
+              mountPath: /data/configdb
+        - name: install
+          image: "{{ .Values.installImage.repository }}:{{ .Values.installImage.tag }}"
+          args:
+            - --work-dir=/work-dir
+          imagePullPolicy: "{{ .Values.installImage.pullPolicy }}"
+          volumeMounts:
+            - name: workdir
+              mountPath: /work-dir
+        - name: bootstrap
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command:
+            - /work-dir/peer-finder
+          args:
+            - -on-start=/init/on-start.sh
+            - "-service={{ .Values.replicas.name }}-{{ .Release.Name }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: REPLICA_SET
+              value: "{{ .Values.replicas.name }}"
+            - name: SRV_PORT
+              value: "{{ .Values.mongod.port }}"
+            - name: SRV_TYPE
+              value: "--{{ .Values.mongod.svr }}"          
+          volumeMounts:
+            - name: workdir
+              mountPath: /work-dir
+            - name: init
+              mountPath: /init
+            - name: configdir
+              mountPath: /data/configdb
+            - name: datadir
+              mountPath: /data/db        
+      containers:
+        - name: {{ .Values.mongod.name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          ports:
+            - name: peer
+              containerPort: {{ .Values.mongod.port }}
+          command:
+            - mongod
+          args:
+            - --{{ .Values.mongod.svr }}
+            - --dbpath=/data/db
+            - --replSet={{ .Values.replicas.name }}
+            - --port={{ .Values.mongod.port }}
+            - --bind_ip=0.0.0.0
+          livenessProbe:
+            exec:
+              command:
+                - mongo   
+                - --port={{ .Values.mongod.port }}      
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+          readinessProbe:
+            exec:
+              command:
+                - mongo
+                - --port={{ .Values.mongod.port }}
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+          volumeMounts:
+            - name: datadir
+              mountPath: /data/db
+            - name: configdir
+              mountPath: /data/configdb
+            - name: workdir
+              mountPath: /work-dir
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ .Values.mongod.name }}
+            topologyKey: "kubernetes.io/hostname"    
+      volumes:
+        - name: config
+          configMap:
+            name: {{ .Values.replicas.name }}-{{ .Release.Name }}-mongodb
+        - name: init
+          configMap:
+            defaultMode: 0755
+            name: {{ .Values.replicas.name }}-{{ .Release.Name }}-init
+        - name: workdir
+          emptyDir: {}
+        - name: configdir
+          emptyDir: {}
+{{- if .Values.persistentVolume.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: datadir
+        annotations:
+        {{- range $key, $value := .Values.persistentVolume.annotations }}
+          {{ $key }}: {{ $value }}
+        {{- end }}
+      spec:
+        accessModes:
+        {{- range .Values.persistentVolume.accessModes }}
+          - {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistentVolume.size | quote }}
+      {{- if .Values.persistentVolume.storageClass }}
+      {{- if (eq "-" .Values.persistentVolume.storageClass) }}
+        storageClassName: ""
+      {{- else }}
+        storageClassName: "{{ .Values.persistentVolume.storageClass }}"
+      {{- end }}
+      {{- end }}
+{{- else }}
+        - name: datadir
+          emptyDir: {}
+{{- end }}

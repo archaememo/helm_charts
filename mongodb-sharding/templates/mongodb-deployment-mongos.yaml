@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Values.mongos.name }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ .Values.mongos.name }}-{{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.mongos.name }}
+      release: {{ .Release.Name }}
+  replicas: {{ .Values.replicas.num }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.mongos.name }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Values.mongos.name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          ports:
+            - name: peer
+              containerPort: {{ .Values.mongos.port }}
+          command:
+            - mongos
+          args:
+            - --configdb={{ template "cfgsvr.list" . }}
+            - --port={{ .Values.mongos.port }}
+            - --bind_ip=0.0.0.0
+          volumeMounts:
+            - name: datadir
+              mountPath: /data/db
+            - name: workdir
+              mountPath: /work-dir
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - {{ .Values.mongos.name }}
+            topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: workdir
+          emptyDir: {}
+        - name: datadir
+          emptyDir: {}
