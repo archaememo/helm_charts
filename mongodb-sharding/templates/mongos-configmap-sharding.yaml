@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: {{ .Values.mongos.name }}
+    chart: {{ .Chart.Name }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ .Values.mongos.name }}-{{ .Release.Name }}-sharding
+data:
+{{ include "sharding.list" . | indent 2 }}

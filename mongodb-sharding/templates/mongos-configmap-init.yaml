@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: {{ .Values.mongos.name }}
+    chart: {{ .Chart.Name }}
+    heritage: {{ .Release.Service }}
+    release: {{ .Release.Name }}
+  name: {{ .Values.mongos.name }}-{{ .Release.Name }}-init
+data:
+  on-start.sh: |
+{{ .Files.Get "init/on-start.sh" | indent 4 }}

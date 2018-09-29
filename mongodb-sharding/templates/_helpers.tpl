@@ -1,80 +1,56 @@
 {{/* vim: set filetype=mustache: */}}
-{{/*
-Expand the name of the chart.
-*/}}
-{{/*
-Create the name of config service
-*/}}
-{{- define "mongodb-conf.name" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-conf" $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
 
 {{/*
 Create config service list
 */}}
 {{- define "cfgsvr.list" -}}
-{{- $repName := .Values.config.replicas.name -}}
-{{- $repNum := (int (.Values.config.replicas.num)) -}}
-{{- $mdName := .Values.config.mongod.name -}}
-{{- $mdPort := .Values.config.mongod.port -}}
-{{- $rlName := .Release.Name -}}
-{{- printf "%s/" .Values.config.replicas.name -}}
-{{- $num := .Values.config.replicas.num -}}
-{{- range $val := .Values.loop8 -}}
-{{- if lt (int ($val)) $repNum -}}
-{{- printf "%s-%s-%s.%s-%s.default.svc.cluster.local:%s," $mdName $rlName $val $repName $rlName $mdPort -}}
-{{- else if eq (int ($val)) $repNum -}}
-{{- printf "%s-%s-%s.%s-%s.default.svc.cluster.local:%s"  $mdName $rlName $val $repName $rlName $mdPort -}}
-{{- else -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "mongodb.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
+    {{- $repName := .Values.global.config.repName -}}
+    {{- $repNum := (int (.Values.global.config.repNum)) -}}
+    {{- $mdName := .Values.global.config.name -}}
+    {{- $mdPort := .Values.global.port -}}
+    {{- $rlName := .Release.Name -}}
+    {{- printf "%s/" $repName -}}
+    {{- range $val := .Values.loop8 -}}
+        {{- $val_r := add (int ($val)) 1 -}}
+        {{- if lt $val_r (int ($repNum)) -}}
+            {{- printf "%s-%s-%s.%s-%s.default.svc.cluster.local:%s," $mdName $rlName $val $repName $rlName $mdPort -}}
+        {{- else if eq $val_r (int ($repNum)) -}}
+            {{- printf "%s-%s-%s.%s-%s.default.svc.cluster.local:%s" $mdName $rlName $val $repName $rlName $mdPort -}}
+        {{- else -}}
+        {{- end -}}
+    {{- end -}}
 {{- end -}}
 
 {{/*
-Create the name of shard
+Create config service list
 */}}
-{{- define "mongodb-shard.name" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-shard" $name | trunc 63 | trimSuffix "-" -}}
+{{- define "sharding.list" -}}
+    {{- $repName := .Values.global.mongod.repName -}}
+    {{- $repNum := (int (.Values.global.mongod.repNum)) -}}
+    {{- $mdName := .Values.global.mongod.name -}}
+    {{- $mdPort := .Values.global.port -}}
+    {{- $rlName := .Release.Name -}}
+    {{- $shNum := .Values.mongos.shardNum -}}
+    {{- range $val := .Values.loop8 -}}
+        {{- $val_r := add (int ($val)) 1 -}}
+        {{- if le $val_r (int ($shNum)) -}}
+            {{- printf "\"%s%s\": \"%s%s/" $repName $val $repName $val -}}
+            {{- range $idx := $.Values.loop8 -}}
+                {{- $idx_r := add (int ($idx)) 1 -}}
+                {{- if lt $idx_r (int ($repNum)) -}}
+                    {{- printf "%s%s-%s-%s.%s%s-%s.default.svc.cluster.local:%s," $mdName $val $rlName $idx $repName $val $rlName $mdPort -}}
+                {{- else if eq $idx_r (int ($repNum)) -}}
+                    {{- printf "%s%s-%s-%s.%s%s-%s.default.svc.cluster.local:%s\"" $mdName $val $rlName $idx $repName $val $rlName $mdPort -}}
+                {{- else -}}
+                {{- end -}}
+            {{- end -}}
+            {{- if lt $val_r (int ($shNum)) -}}
+                {{- printf "\n" -}}
+            {{- end -}}
+        {{- end -}}
+    {{- end -}}
 {{- end -}}
 
-{{/*
-Create the name of mongos service
-*/}}
-{{- define "mongodb-mongos.name" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-mongos" $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
-{{/*
-Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-If release name contains chart name it will be used as a full name.
-*/}}
-{{- define "mongodb.fullname" -}}
-{{- if .Values.fullnameOverride -}}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $name .Release.Name -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Create chart name and version as used by the chart label.
-*/}}
-{{- define "mongodb.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
 
 {{/*
 Create the name for the admin secret.

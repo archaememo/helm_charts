@@ -5,17 +5,17 @@ metadata:
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
   labels:
-    app: {{ .Values.mongod.name }}
+    app: {{ template "mongo.name" .}}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
-  name: {{ .Values.replicas.name }}-{{ .Release.Name }}
+  name: {{ template "service.name" .}}-{{ .Release.Name }}
 spec:
   type: ClusterIP
   clusterIP: None
   ports:
     - name: peer
-      port: {{ .Values.mongod.port }}
+      port: {{ .Values.global.port }}
   selector:
-    app: {{ .Values.mongod.name }}
+    app: {{ template "mongo.name" .}}
     release: {{ .Release.Name }}

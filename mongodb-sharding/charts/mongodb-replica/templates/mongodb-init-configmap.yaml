@@ -2,14 +2,14 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   labels:
-    app: {{ template "mongodb.name" . }}
-    chart: {{ template "mongodb.chart" . }}
+    app: {{ template "mongo.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
 {{- if .Values.extraLabels }}
 {{ toYaml .Values.extraLabels | indent 4 }}
 {{- end }}
-  name: {{ .Values.replicas.name }}-{{ .Release.Name }}-init
+  name: {{ template "service.name" .}}-{{ .Release.Name }}-init
 data:
   on-start.sh: |
 {{ .Files.Get "init/on-start.sh" | indent 4 }}

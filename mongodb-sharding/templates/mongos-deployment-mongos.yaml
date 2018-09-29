@@ -21,22 +21,29 @@ spec:
     spec:
       containers:
         - name: {{ .Values.mongos.name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+          image: "{{ .Values.global.mongoImage.repository }}:{{ .Values.global.mongoImage.tag }}"
+          imagePullPolicy: "{{ .Values.global.mongoImage.pullPolicy }}"
           ports:
             - name: peer
-              containerPort: {{ .Values.mongos.port }}
+              containerPort: {{ .Values.global.port }}
           command:
-            - mongos
+            - /init/on-start.sh
           args:
             - --configdb={{ template "cfgsvr.list" . }}
-            - --port={{ .Values.mongos.port }}
+            - --port={{ .Values.global.port }}
             - --bind_ip=0.0.0.0
+          env:
+            - name: SRV_PORT
+              value: "{{ .Values.global.port }}"
           volumeMounts:
             - name: datadir
               mountPath: /data/db
             - name: workdir
               mountPath: /work-dir
+            - name: shlst
+              mountPath: /sh-lst
+            - name: init
+              mountPath: /init
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -52,3 +59,13 @@ spec:
           emptyDir: {}
         - name: datadir
           emptyDir: {}
+        - name: shlst
+          configMap:
+            name: {{ .Values.mongos.name }}-{{ .Release.Name }}-sharding
+        - name: init
+          configMap:
+            defaultMode: 0755
+            name: {{ .Values.mongos.name }}-{{ .Release.Name }}-init
+            
+          
+          

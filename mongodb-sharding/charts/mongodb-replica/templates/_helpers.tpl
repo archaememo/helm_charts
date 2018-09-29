@@ -1,54 +1,33 @@
 {{/* vim: set filetype=mustache: */}}
 {{/*
-Expand the name of the chart.
+Name of the app.
 */}}
-{{- define "mongodb.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{/*
-{{/*
-Create the name of shard
-*/}}
-{{- define "mongodb-shard.name" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-shard" $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-Create the name of config service
-*/}}
-{{- define "mongodb-conf.name" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-conf" $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{/*
-Create the name of mongos service
-*/}}
-{{- define "mongodb-mongos.name" -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- printf "%s-mongos" $name | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-{{/*
-Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-If release name contains chart name it will be used as a full name.
-*/}}
-{{- define "mongodb.fullname" -}}
-{{- if .Values.fullnameOverride -}}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- define "mongo.name" -}}
+{{- if eq .Values.replicas.svr  "configsvr" -}}
+{{- printf "%s" .Values.global.config.name -}}
 {{- else -}}
-{{- $name := default .Chart.Name .Values.nameOverride -}}
-{{- if contains $name .Release.Name -}}
-{{- .Release.Name | trunc 63 | trimSuffix "-" -}}
-{{- else -}}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
+{{- printf "%s%s" .Values.global.mongod.name .Values.replicas.idx -}}
 {{- end -}}
 {{- end -}}
-{{- end -}}
-
 {{/*
-Create chart name and version as used by the chart label.
+Name of the service.
 */}}
-{{- define "mongodb.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
+{{- define "service.name" -}}
+{{- if eq .Values.replicas.svr  "configsvr" -}}
+{{- printf "%s" .Values.global.config.repName -}}
+{{- else -}}
+{{- printf "%s%s" .Values.global.mongod.repName .Values.replicas.idx -}}
+{{- end -}}
+{{- end -}}
+{/*
+number per replicas.
+*/}}
+{{- define "replicas.num" -}}
+{{- if eq .Values.replicas.svr  "configsvr" -}}
+{{- printf "%s" .Values.global.config.repNum -}}
+{{- else -}}
+{{- printf "%s" .Values.global.mongod.repNum -}}
+{{- end -}}
 {{- end -}}
 
 {{/*

@@ -119,12 +119,19 @@ for peer in "${peers[@]}"; do
     if mongo admin --host "$peer" --port ${srv_port} "${admin_creds[@]}" "${ssl_args[@]}" --eval "rs.isMaster()" | grep '"ismaster" : true'; then
         log "Found master: $peer"
         log "Adding myself ($service_name) to replica set..."
+        
+        sleep 3
+        
         mongo admin --host "$peer" --port ${srv_port} "${admin_creds[@]}" "${ssl_args[@]}" --eval "rs.add('${service_name}:${srv_port}')"
 
         sleep 3
 
         log 'Waiting for replica to reach SECONDARY state...'
         until printf '.'  && [[ $(mongo admin --port ${srv_port} "${admin_creds[@]}" "${ssl_args[@]}" --quiet --eval "rs.status().myState") == '2' ]]; do
+            if ! (mongo --host "$peer" --port ${srv_port} "${ssl_args[@]}" --eval "rs.status()" | grep "${service_name}:${srv_port}"); then
+                mongo admin --host "$peer" --port ${srv_port} "${admin_creds[@]}" "${ssl_args[@]}" --eval "rs.add('${service_name}:${srv_port}')"
+                log "mongo admin --host \"$peer\" --port ${srv_port} \"${admin_creds[@]}\" \"${ssl_args[@]}\" --eval \"rs.add(\'${service_name}:${srv_port}\')\""
+            fi
             sleep 1
         done
 

@@ -2,22 +2,22 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   labels:
-    app: {{ .Values.mongod.name }}
+    app: {{ template "mongo.name" .}}
     chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     heritage: {{ .Release.Service }}
     release: {{ .Release.Name }}
-  name: {{ .Values.mongod.name }}-{{ .Release.Name }}
+  name: {{ template "mongo.name" . }}-{{ .Release.Name }}
 spec:
   selector:
     matchLabels:
-      app: {{ .Values.mongod.name }}
+      app: {{ template "mongo.name" .}}
       release: {{ .Release.Name }}
-  serviceName: {{ .Values.replicas.name }}-{{ .Release.Name }}
-  replicas: {{ .Values.replicas.num }}
+  serviceName: {{ template "service.name" .}}-{{ .Release.Name }}
+  replicas: {{ template "replicas.num" .}}
   template:
     metadata:
       labels:
-        app: {{ .Values.mongod.name }}
+        app: {{ template "mongo.name" .}}
         release: {{ .Release.Name }}
     spec:
       initContainers:
@@ -41,21 +41,21 @@ spec:
             - name: configdir
               mountPath: /data/configdb
         - name: install
-          image: "{{ .Values.installImage.repository }}:{{ .Values.installImage.tag }}"
+          image: "{{ .Values.global.installImage.repository }}:{{ .Values.global.installImage.tag }}"
           args:
             - --work-dir=/work-dir
-          imagePullPolicy: "{{ .Values.installImage.pullPolicy }}"
+          imagePullPolicy: "{{ .Values.global.installImage.pullPolicy }}"
           volumeMounts:
             - name: workdir
               mountPath: /work-dir
         - name: bootstrap
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.global.mongoImage.repository }}:{{ .Values.global.mongoImage.tag }}"
           command:
             - /work-dir/peer-finder
           args:
             - -on-start=/init/on-start.sh
-            - "-service={{ .Values.replicas.name }}-{{ .Release.Name }}"
-          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+            - "-service={{ template "service.name" .}}-{{ .Release.Name }}"
+          imagePullPolicy: "{{ .Values.global.mongoImage.pullPolicy }}"
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -63,11 +63,11 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
             - name: REPLICA_SET
-              value: "{{ .Values.replicas.name }}"
+              value: "{{ template "service.name" . }}"
             - name: SRV_PORT
-              value: "{{ .Values.mongod.port }}"
+              value: "{{ .Values.global.port }}"
             - name: SRV_TYPE
-              value: "--{{ .Values.mongod.svr }}"          
+              value: "--{{ .Values.replicas.svr }}"          
           volumeMounts:
             - name: workdir
               mountPath: /work-dir
@@ -78,25 +78,25 @@ spec:
             - name: datadir
               mountPath: /data/db        
       containers:
-        - name: {{ .Values.mongod.name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: "{{ .Values.image.pullPolicy }}"
+        - name: {{ template "mongo.name" .}}
+          image: "{{ .Values.global.mongoImage.repository }}:{{ .Values.global.mongoImage.tag }}"
+          imagePullPolicy: "{{ .Values.global.mongoImage.pullPolicy }}"
           ports:
             - name: peer
-              containerPort: {{ .Values.mongod.port }}
+              containerPort: {{ .Values.global.port }}
           command:
             - mongod
           args:
-            - --{{ .Values.mongod.svr }}
+            - --{{ .Values.replicas.svr }}
             - --dbpath=/data/db
-            - --replSet={{ .Values.replicas.name }}
-            - --port={{ .Values.mongod.port }}
+            - --replSet={{ template "service.name" . }}
+            - --port={{ .Values.global.port }}
             - --bind_ip=0.0.0.0
           livenessProbe:
             exec:
               command:
                 - mongo   
-                - --port={{ .Values.mongod.port }}      
+                - --port={{ .Values.global.port }}      
                 - --eval
                 - "db.adminCommand('ping')"
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
@@ -108,7 +108,7 @@ spec:
             exec:
               command:
                 - mongo
-                - --port={{ .Values.mongod.port }}
+                - --port={{ .Values.global.port }}
                 - --eval
                 - "db.adminCommand('ping')"
             initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
@@ -131,16 +131,16 @@ spec:
               - key: app
                 operator: In
                 values:
-                - {{ .Values.mongod.name }}
+                - {{ template "mongo.name" .}}
             topologyKey: "kubernetes.io/hostname"    
       volumes:
         - name: config
           configMap:
-            name: {{ .Values.replicas.name }}-{{ .Release.Name }}-mongodb
+            name: {{ template "service.name" .}}-{{ .Release.Name }}-mongodb
         - name: init
           configMap:
             defaultMode: 0755
-            name: {{ .Values.replicas.name }}-{{ .Release.Name }}-init
+            name: {{ template "service.name" .}}-{{ .Release.Name }}-init
         - name: workdir
           emptyDir: {}
         - name: configdir
