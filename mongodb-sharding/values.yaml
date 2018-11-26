@@ -2,7 +2,7 @@ global:
   namesapce: default
   port: "27017"
   mongod:
-    name: mo
+    name: md
     repName: rs
     repNum: "3"
   config:
@@ -22,7 +22,9 @@ global:
     accessModes:
       - ReadWriteOnce
     size: 10Gi
-    annotations: {}
+    annotations:
+      volume.beta.kubernetes.io/storage-class: sas
+      volume.beta.kubernetes.io/storage-provisioner: flexvolume-huawei.com/fuxivol    
   readinessProbe:
     initialDelaySeconds: 5
     timeoutSeconds: 1
@@ -158,19 +160,3 @@ tls:
 
 # Entries for the MongoDB config file
 configmap:
-
-# Readiness probe
-readinessProbe:
-  initialDelaySeconds: 5
-  timeoutSeconds: 1
-  failureThreshold: 3
-  periodSeconds: 10
-  successThreshold: 1
-
-# Liveness probe
-livenessProbe:
-  initialDelaySeconds: 30
-  timeoutSeconds: 5
-  failureThreshold: 3
-  periodSeconds: 10
-  successThreshold: 1

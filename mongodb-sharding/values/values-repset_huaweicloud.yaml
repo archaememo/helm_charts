@@ -10,15 +10,15 @@ global:
     repName: cs
     repNum: "3"
   installImage:
-    repository: k8s.gcr.io/mongodb-install
+    repository: swr.cn-east-2.myhuaweicloud.com/huawei_cn2/mongodb-install
     tag: 0.6
     pullPolicy: IfNotPresent
   mongoImage:
-    repository: mongo
-    tag: latest
+    repository: 100.125.17.64:20202/hwofficial/mongo
+    tag: 3.4
     pullPolicy: IfNotPresent
   persistentVolume:
-    enabled: false
+    enabled: true
     accessModes:
       - ReadWriteOnce
     size: 10Gi
@@ -37,34 +37,10 @@ global:
     failureThreshold: 3
     periodSeconds: 10
     successThreshold: 1
+    
 replicas:
   idx: "0"
   svr: shardsvr
 
 auth:
   enabled: false
-
-persistentVolume:
-  enabled: false
-  accessModes:
-    - ReadWriteOnce
-  size: 10Gi
-  annotations:
-    volume.beta.kubernetes.io/storage-class: sas
-    volume.beta.kubernetes.io/storage-provisioner: flexvolume-huawei.com/fuxivol
-
-# Readiness probe
-readinessProbe:
-  initialDelaySeconds: 5
-  timeoutSeconds: 1
-  failureThreshold: 3
-  periodSeconds: 10
-  successThreshold: 1
-
-# Liveness probe
-livenessProbe:
-  initialDelaySeconds: 30
-  timeoutSeconds: 5
-  failureThreshold: 3
-  periodSeconds: 10
-  successThreshold: 1

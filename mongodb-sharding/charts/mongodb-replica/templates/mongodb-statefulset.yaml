@@ -99,11 +99,11 @@ spec:
                 - --port={{ .Values.global.port }}      
                 - --eval
                 - "db.adminCommand('ping')"
-            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
-            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
-            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
-            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
-            successThreshold: {{ .Values.livenessProbe.successThreshold }}
+            initialDelaySeconds: {{ .Values.global.livenessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.global.livenessProbe.failureThreshold }}
+            periodSeconds: {{ .Values.global.livenessProbe.periodSeconds }}
+            successThreshold: {{ .Values.global.livenessProbe.successThreshold }}
           readinessProbe:
             exec:
               command:
@@ -111,11 +111,11 @@ spec:
                 - --port={{ .Values.global.port }}
                 - --eval
                 - "db.adminCommand('ping')"
-            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
-            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
-            successThreshold: {{ .Values.readinessProbe.successThreshold }}
+            initialDelaySeconds: {{ .Values.global.readinessProbe.initialDelaySeconds }}
+            timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.global.readinessProbe.failureThreshold }}
+            periodSeconds: {{ .Values.global.readinessProbe.periodSeconds }}
+            successThreshold: {{ .Values.global.readinessProbe.successThreshold }}
           volumeMounts:
             - name: datadir
               mountPath: /data/db
