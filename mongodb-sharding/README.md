@@ -1,17 +1,28 @@
 # MongoDB Sharding Helm Chart
-----
-Originated from https://github.com/helm/charts/tree/master/stable/mongodb-replicaset and made some modifcation for sharding
-----
+## Origin information
+fork from https://github.com/helm/charts/tree/master/stable/mongodb-replicaset and made some modifcation for sharding
+
 ## Overall Structure
-<img src="https://github.com/archaetor/helm_charts/tree/master/mongodb-sharding/help.jgp">
+<img src="https://github.com/archaetor/helm_charts/blob/master/mongodb-sharding/help.jpg">
 
-## Deploy a Mongodb-Replicaset
-$sudo helm install ./charts/mongodb-replica --name myMongo
+## To Use Charts
+#### Deployment a replicaset 
+```
+$ helm install ./charts/mongodb-replica --name myMongo
+```
+#### Upgrade from a replicaset to sharding
+```
+$ Helm upgrade . myMongo
+```
+#### Deploy a sharding directly
+```
+$ helm install . --name myMongo
+```
+#### Deploy with a given value file
+```
+$ helm install . --name myMongo  --value ./value/myValueFile
+```
 
-## Upgrade from Mongodb-Replicaset to Mongodb-Sharding
-$sudo Helm upgrade . myMongo
-
-## Deploy a Mongodb-Sharding directly
-$sudo helm install . --name myMongo
-
+## Other
+Have not add security configure yet.
 
